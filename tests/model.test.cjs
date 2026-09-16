@@ -101,6 +101,7 @@ test('Nordic time labels use CET/CEST west of the Finland threshold and EET/EEST
 test('MET Norway Nowcast responses parse into sorted mm/time samples', () => {
   const payload = JSON.stringify({
     properties: {
+      meta: { radar_coverage: 'ok' },
       timeseries: [
         { time: '2026-01-15T13:00:00Z', data: { instant: { details: { precipitation_rate: 0.3 } } } },
         { time: '2026-01-15T12:00:00Z', data: { instant: { details: { precipitation_rate: 0.0 } } } },
@@ -108,7 +109,9 @@ test('MET Norway Nowcast responses parse into sorted mm/time samples', () => {
       ]
     }
   })
-  const samples = model.parseNowcastForecast(payload, 10.75)
+  const result = model.parseNowcastForecast(payload, 10.75)
+  assert.equal(result.radarCoverage, 'ok')
+  const samples = result.samples
   assert.equal(samples.length, 3)
   assert.equal(samples[0].time, '13:00')
   assert.equal(samples[1].time, '13:30')
@@ -118,10 +121,18 @@ test('MET Norway Nowcast responses parse into sorted mm/time samples', () => {
   assert.equal(samples[2].mm, 0.3)
 })
 
+test('radar_coverage of "nok" is reported, and a missing/malformed meta yields null', () => {
+  const nok = JSON.stringify({ properties: { meta: { radar_coverage: 'nok' }, timeseries: [] } })
+  assert.equal(model.parseNowcastForecast(nok, 10.75).radarCoverage, 'nok')
+  assert.equal(model.parseNowcastForecast('{}', 10.75).radarCoverage, null)
+  assert.equal(model.parseNowcastForecast(JSON.stringify({ properties: {} }), 10.75).radarCoverage, null)
+  assert.equal(model.parseNowcastForecast(JSON.stringify({ properties: { meta: { radar_coverage: 7 } } }), 10.75).radarCoverage, null)
+})
+
 test('Nowcast parsing tolerates malformed entries and invalid input', () => {
-  assert.deepEqual(model.parseNowcastForecast('', 10.75), [])
-  assert.deepEqual(model.parseNowcastForecast('not json', 10.75), [])
-  assert.deepEqual(model.parseNowcastForecast('{}', 10.75), [])
+  assert.deepEqual(model.parseNowcastForecast('', 10.75), { samples: [], radarCoverage: null })
+  assert.deepEqual(model.parseNowcastForecast('not json', 10.75), { samples: [], radarCoverage: null })
+  assert.deepEqual(model.parseNowcastForecast('{}', 10.75), { samples: [], radarCoverage: null })
   const payload = JSON.stringify({
     properties: {
       timeseries: [
@@ -132,7 +143,7 @@ test('Nowcast parsing tolerates malformed entries and invalid input', () => {
       ]
     }
   })
-  const samples = model.parseNowcastForecast(payload, 10.75)
+  const samples = model.parseNowcastForecast(payload, 10.75).samples
   assert.equal(samples.length, 1)
   assert.equal(samples[0].time, '14:00')
 })

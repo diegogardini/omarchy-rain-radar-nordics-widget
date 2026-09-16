@@ -33,6 +33,10 @@ Panel {
   readonly property string selectionPath: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy/settings/rain-radar-location.json"
   property var activeLocation: null
   property string errorMessage: ""
+  // "ok", "nok", or "" (unknown/not yet fetched). Reported live, per exact
+  // coordinates, by MET Norway's Nowcast API -- mountains and fjords can
+  // block radar locally even well inside its nominal coverage area.
+  property string radarCoverage: ""
   property bool loading: false
   property int locationProviderIndex: 0
   readonly property var locationProviders: [
@@ -88,7 +92,7 @@ Panel {
 
   function useLocation(location) {
     location = MapModel.namedLocation(location)
-    if (Model.locationKey(activeLocation) !== Model.locationKey(location)) samples = []
+    if (Model.locationKey(activeLocation) !== Model.locationKey(location)) { samples = []; radarCoverage = "" }
     activeLocation = location
     if (!Model.inCoverage(location.latitude, location.longitude)) {
       errorMessage = "This position is outside the Nordic forecast coverage."
@@ -223,10 +227,12 @@ Panel {
       }
       if (exitCode !== 0) {
         root.errorMessage = "Could not load the forecast."
+        root.radarCoverage = ""
       } else {
         var parsed = Model.parseNowcastForecast(responseText, requestLongitude)
-        if (parsed.length === 0) root.errorMessage = "No forecast values returned."
-        else { root.samples = parsed; root.errorMessage = "" }
+        root.radarCoverage = parsed.radarCoverage || ""
+        if (parsed.samples.length === 0) root.errorMessage = "No forecast values returned."
+        else { root.samples = parsed.samples; root.errorMessage = "" }
       }
       root.loading = false
     }
@@ -382,16 +388,6 @@ Panel {
               width: parent.width
               wrapMode: Text.WordWrap
               textFormat: Text.PlainText
-              text: "▨ Red: outside MET Norway's published Nowcast coverage area. Even inside it, mountains and fjords can locally block radar."
-              color: "#e05252"
-              font.family: Style.font.family
-              font.pixelSize: Style.font.bodySmall
-            }
-
-            Text {
-              width: parent.width
-              wrapMode: Text.WordWrap
-              textFormat: Text.PlainText
               text: root.automaticLocation
                 ? "● Blue: " + (root.automaticLocation.name || "Automatic location") + (root.weatherLocation ? " (Weather settings)" : " (approximate IP location)") + (Model.inCoverage(root.automaticLocation.latitude, root.automaticLocation.longitude) ? "" : " · outside map")
                 : (root.locationError || "Finding automatic location…")
@@ -463,6 +459,16 @@ Panel {
             color: Color.urgent
             font.family: Style.font.family
             font.pixelSize: Style.font.body
+          }
+
+          Text {
+            width: parent.width
+            visible: !root.pickingLocation && root.radarCoverage === "nok"
+            text: "⚠ Radar coverage is limited here right now (terrain can block the signal locally) — this forecast may be less reliable."
+            wrapMode: Text.WordWrap
+            color: Color.urgent
+            font.family: Style.font.family
+            font.pixelSize: Style.font.bodySmall
           }
 
           Text {

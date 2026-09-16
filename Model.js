@@ -77,9 +77,17 @@ function nordicTimeLabel(isoStep, longitude) {
 // radar nowcast). Each timeseries entry nests the value under
 // data.instant.details.precipitation_rate. Parsed defensively since a
 // malformed or partial entry shouldn't break the whole forecast.
+//
+// The response's properties.meta.radar_coverage ("ok"/"nok") reports,
+// live and per the exact coordinates queried, whether the radar actually
+// has a clear view of this point right now -- mountains and fjords can
+// block it locally even well inside MET Norway's nominal coverage area.
+// Returned as radarCoverage alongside the parsed samples.
 function parseNowcastForecast(raw, longitude) {
   try {
     var data = JSON.parse(String(raw || "{}"))
+    var meta = (data.properties && data.properties.meta) || {}
+    var radarCoverage = typeof meta.radar_coverage === "string" ? meta.radar_coverage : null
     var series = Array.isArray(data.properties && data.properties.timeseries) ? data.properties.timeseries : []
     var samples = []
     for (var i = 0; i < series.length; i++) {
@@ -91,9 +99,9 @@ function parseNowcastForecast(raw, longitude) {
       samples.push({ mm: mm, time: time, step: String(entry.time) })
     }
     samples.sort(function(a, b) { return a.step < b.step ? -1 : (a.step > b.step ? 1 : 0) })
-    return samples
+    return { samples: samples, radarCoverage: radarCoverage }
   } catch (e) {
-    return []
+    return { samples: [], radarCoverage: null }
   }
 }
 
