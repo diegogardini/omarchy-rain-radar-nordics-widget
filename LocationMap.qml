@@ -118,14 +118,25 @@ Item {
         for (var m = 0; m < coverageRing.length; m++)
           coveragePoints.push(MapModel.project(coverageRing[m][1], coverageRing[m][0], width, height, root.activeView))
 
+        // The view's own bounds rarely match the canvas's aspect ratio, so
+        // viewport() letterboxes: the map only fills part of the canvas,
+        // with empty margins to either side or above/below. Confine the
+        // tint to that actual map rectangle (from the view's own corners),
+        // not the full canvas — otherwise the coverage ring's real edge,
+        // extrapolated through the empty margins with the same projection,
+        // paints a confusing false boundary out there.
+        var viewBounds = (root.activeView ? root.activeView.bounds : MapModel.bounds)
+        var mapTopLeft = MapModel.project(viewBounds.north, viewBounds.west, width, height, root.activeView)
+        var mapBottomRight = MapModel.project(viewBounds.south, viewBounds.east, width, height, root.activeView)
+
         // Qt Quick's Canvas doesn't honor fill(fillRule), so an "evenodd
-        // hole" can't be punched via a compound path: fill the whole
-        // canvas with the tint, then erase the covered region with a
+        // hole" can't be punched via a compound path: fill the map
+        // rectangle with the tint, then erase the covered region with a
         // destination-out composite instead. Drawn before the country
         // shapes so their own (semi-transparent) fill still renders
         // normally on top, inside or outside the tinted area.
         ctx.fillStyle = root.translucent(root.noCoverageColor, 0.16)
-        ctx.fillRect(0, 0, width, height)
+        ctx.fillRect(mapTopLeft.x, mapTopLeft.y, mapBottomRight.x - mapTopLeft.x, mapBottomRight.y - mapTopLeft.y)
         ctx.globalCompositeOperation = "destination-out"
         ctx.beginPath()
         for (m = 0; m < coveragePoints.length; m++) {
@@ -156,7 +167,12 @@ Item {
         }
 
         // Dashed outline of the coverage boundary itself, drawn last so
-        // it's visible over both the tint and the country shapes.
+        // it's visible over both the tint and the country shapes. Clipped
+        // to the same map rectangle as the tint, for the same reason.
+        ctx.save()
+        ctx.beginPath()
+        ctx.rect(mapTopLeft.x, mapTopLeft.y, mapBottomRight.x - mapTopLeft.x, mapBottomRight.y - mapTopLeft.y)
+        ctx.clip()
         ctx.beginPath()
         for (m = 0; m < coveragePoints.length; m++) {
           if (m === 0) ctx.moveTo(coveragePoints[m].x, coveragePoints[m].y)
@@ -168,6 +184,7 @@ Item {
         ctx.setLineDash([3, 3])
         ctx.stroke()
         ctx.setLineDash([])
+        ctx.restore()
       }
     }
 
