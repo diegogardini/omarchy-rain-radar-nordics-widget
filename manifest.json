@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.dzanaga.omarchy-rain-radar-belgium-netherlands-widget",
-  "name": "Rain Radar Belgium & Netherlands",
-  "version": "1.1.0",
-  "author": "dzanaga",
-  "description": "Buienradar rain forecast for Belgium and the Netherlands",
+  "id": "io.github.diegogardini.omarchy-rain-radar-denmark-widget",
+  "name": "Rain Forecast Denmark",
+  "version": "1.0.0",
+  "author": "diegogardini",
+  "description": "DMI (HARMONIE) hourly rain forecast for Denmark",
   "kinds": [
     "bar-widget"
   ],
@@ -12,13 +12,13 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Rain Radar Belgium & Netherlands",
-    "description": "Current rain and a smooth Buienradar forecast graph",
+    "displayName": "Rain Forecast Denmark",
+    "description": "Current rain and a smooth DMI hourly forecast graph",
     "category": "Info",
     "defaultSection": "center",
     "allowMultiple": false,
     "defaults": {
-      "refreshMinutes": 5,
+      "refreshMinutes": 15,
       "latitude": "",
       "longitude": "",
       "locationName": ""
@@ -28,9 +28,9 @@
         "key": "refreshMinutes",
         "type": "number",
         "label": "Refresh interval",
-        "description": "Minutes between Buienradar updates (minimum 5).",
-        "defaultValue": 5,
-        "min": 5,
+        "description": "Minutes between DMI updates (minimum 10).",
+        "defaultValue": 15,
+        "min": 10,
         "max": 60,
         "step": 1
       },

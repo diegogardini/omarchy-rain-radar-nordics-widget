@@ -8,7 +8,7 @@ import "MapModel.js" as MapModel
 
 Panel {
   id: root
-  moduleName: "io.github.dzanaga.omarchy-rain-radar-belgium-netherlands-widget"
+  moduleName: "io.github.diegogardini.omarchy-rain-radar-denmark-widget"
   ipcTarget: moduleName
   manageIpc: false
 
@@ -91,7 +91,7 @@ Panel {
     if (Model.locationKey(activeLocation) !== Model.locationKey(location)) samples = []
     activeLocation = location
     if (!Model.inCoverage(location.latitude, location.longitude)) {
-      errorMessage = "This position is outside Buienradar coverage (Belgium and the Netherlands)."
+      errorMessage = "This position is outside DMI's Denmark coverage."
       samples = []
       loading = false
       return
@@ -103,11 +103,13 @@ Panel {
     if (!activeLocation || !Model.inCoverage(activeLocation.latitude, activeLocation.longitude) || rainProc.running) return
     errorMessage = ""
     loading = true
-    var url = "https://gps.buienradar.nl/getrr.php?lat="
-      + encodeURIComponent(String(activeLocation.latitude))
-      + "&lon=" + encodeURIComponent(String(activeLocation.longitude))
-    // Buienradar's documented URL currently redirects to its gadgets host.
-    rainProc.command = ["curl", "-fsSL", "--max-time", "8", url]
+    var start = new Date()
+    var end = new Date(start.getTime() + 12 * 60 * 60 * 1000)
+    var url = "https://opendataapi.dmi.dk/v1/forecastedr/collections/harmonie_dini_sf/position"
+      + "?coords=" + encodeURIComponent("POINT(" + activeLocation.longitude + " " + activeLocation.latitude + ")")
+      + "&crs=crs84&parameter-name=rain-precipitation-rate&f=GeoJSON"
+      + "&datetime=" + encodeURIComponent(start.toISOString() + "/" + end.toISOString())
+    rainProc.command = ["curl", "-fsSL", "--max-time", "10", url]
     rainProc.requestLocationKey = Model.locationKey(activeLocation)
     rainProc.responseText = ""
     rainProc.running = true
@@ -217,10 +219,10 @@ Panel {
         return
       }
       if (exitCode !== 0) {
-        root.errorMessage = "Could not load the Buienradar forecast."
+        root.errorMessage = "Could not load the DMI forecast."
       } else {
-        var parsed = Model.parseRainText(responseText)
-        if (parsed.length === 0) root.errorMessage = "Buienradar returned no forecast values."
+        var parsed = Model.parseDmiForecast(responseText)
+        if (parsed.length === 0) root.errorMessage = "DMI returned no forecast values."
         else { root.samples = parsed; root.errorMessage = "" }
       }
       root.loading = false
@@ -453,7 +455,7 @@ Panel {
           Text {
             width: parent.width
             visible: !root.pickingLocation && root.samples.length > 0
-            text: "Rainfall in mm/h · Nonlinear scale emphasizes light rain. 5-minute forecast samples."
+            text: "Rainfall in mm/h · Nonlinear scale emphasizes light rain. Hourly forecast samples."
             wrapMode: Text.WordWrap
             color: Util.alpha(root.barForeground, 0.55)
             font.family: Style.font.family
@@ -461,12 +463,12 @@ Panel {
           }
 
           Text {
-            text: "Data: Buienradar.nl"
+            text: "Data: DMI"
             color: Color.accent
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             font.underline: sourceHover.hovered
-            TapHandler { onTapped: Quickshell.execDetached(["xdg-open", "https://www.buienradar.nl"]) }
+            TapHandler { onTapped: Quickshell.execDetached(["xdg-open", "https://www.dmi.dk"]) }
             HoverHandler { id: sourceHover; cursorShape: Qt.PointingHandCursor }
           }
         }

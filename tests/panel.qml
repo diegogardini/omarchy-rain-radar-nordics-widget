@@ -17,31 +17,31 @@ ShellRoot {
       test.ticks++
       if (test.ticks > 80) { console.error("Timeout phase " + test.phase); Qt.exit(1); return }
       if (test.phase === -1) {
-        panel.useLocation({name: "Selected position", latitude: 51.1662, longitude: 4.4487})
-        test.check(panel.activeLocation.name === "Antwerp Area", "legacy generic label becomes a city area")
-        test.check(panel.activeLocation.latitude === 51.1662 && panel.activeLocation.longitude === 4.4487, "area label preserves forecast coordinates")
-        panel.weatherLocation = {name: "Brussels", latitude: 50.8503, longitude: 4.3517}
+        panel.useLocation({name: "Selected position", latitude: 55.63, longitude: 12.60})
+        test.check(panel.activeLocation.name === "Copenhagen Area", "legacy generic label becomes a city area")
+        test.check(panel.activeLocation.latitude === 55.63 && panel.activeLocation.longitude === 12.60, "area label preserves forecast coordinates")
+        panel.weatherLocation = {name: "Odense", latitude: 55.4038, longitude: 10.4024}
         panel.resolveLocation()
         test.phase = 0
       }
       if (test.phase === 0 && panel.selectionLoaded && panel.samples.length > 0) {
         panel.beginLocationPicker()
-        panel.draftLocation = {name: "Amsterdam", latitude: 52.3676, longitude: 4.9041}
+        panel.draftLocation = {name: "Aarhus", latitude: 56.1629, longitude: 10.2039}
         panel.saveSelection(false)
         test.phase++
       } else if (test.phase === 1 && !panel.savingSelection) {
-        test.check(panel.activeLocation.name === "Amsterdam", "selection applies")
+        test.check(panel.activeLocation.name === "Aarhus", "selection applies")
         panel.beginLocationPicker()
-        panel.draftLocation = {name: "Antwerp", latitude: 51.2194, longitude: 4.4025}
+        panel.draftLocation = {name: "Copenhagen", latitude: 55.6761, longitude: 12.5683}
         panel.saveSelection(false)
         test.phase++
       } else if (test.phase === 2 && !panel.savingSelection && !panel.loading) {
-        test.check(panel.activeLocation.name === "Antwerp", "latest city wins")
-        test.check(panel.samples.length > 0 && panel.samples[0].code === 0, "old Amsterdam response discarded")
-        panel.settings = {latitude: "52.0907", longitude: "5.1214", locationName: "Utrecht"}
+        test.check(panel.activeLocation.name === "Copenhagen", "latest city wins")
+        test.check(panel.samples.length > 0 && panel.samples[0].mm === 0, "old Aarhus response discarded")
+        panel.settings = {latitude: "57.0488", longitude: "9.9217", locationName: "Aalborg"}
         Qt.callLater(function() {
-          test.check(panel.activeLocation.name === "Utrecht", "edited coordinate settings supersede saved map choice")
-          panel.draftLocation = {name: "Invalid", latitude: 90, longitude: 5}
+          test.check(panel.activeLocation.name === "Aalborg", "edited coordinate settings supersede saved map choice")
+          panel.draftLocation = {name: "Invalid", latitude: 90, longitude: 11}
           panel.saveSelection(false)
           test.check(!panel.savingSelection, "out-of-coverage keyboard choice rejected")
           panel.saveSelection(true)
@@ -52,7 +52,7 @@ ShellRoot {
         test.check(panel.activeLocation === panel.automaticLocation, "automatic position restored")
         panel.open()
         panel.beginLocationPicker()
-        panel.draftLocation = {name: "Antwerp Area", latitude: 51.1662, longitude: 4.4487}
+        panel.draftLocation = {name: "Copenhagen Area", latitude: 55.63, longitude: 12.60}
         test.phase++
         test.ticks = 0
       } else if (test.phase === 4 && test.ticks > 10) {

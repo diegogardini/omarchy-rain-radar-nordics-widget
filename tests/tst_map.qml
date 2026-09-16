@@ -16,7 +16,7 @@ Item {
     when: windowShown
     function init() { picks.clear(); map.selectedLocation = null }
     function test_mapClick() {
-      var point = MapModel.project(50.0, 5.8, map.width, map.height)
+      var point = MapModel.project(56.8, 12.0, map.width, map.height)
       var x = Math.round(point.x), y = Math.round(point.y)
       var expected = MapModel.unproject(x, y, map.width, map.height)
       mouseClick(map, x, y)
@@ -26,11 +26,11 @@ Item {
       fuzzyCompare(map.selectedLocation.longitude, expected.longitude, 0.00001)
     }
     function test_cityLabel() {
-      var city = MapModel.cities[7] // Amsterdam
+      var city = MapModel.cities[8] // Vejle
       var point = MapModel.project(city.latitude, city.longitude, map.width, map.height)
       mouseClick(map, point.x - 25, point.y - 12)
       compare(picks.count, 1)
-      compare(map.selectedLocation.name, "Amsterdam")
+      compare(map.selectedLocation.name, city.name)
       compare(map.selectedLocation.latitude, city.latitude)
     }
     function test_outsideBounds() {
@@ -38,13 +38,14 @@ Item {
       compare(picks.count, 0)
     }
     function test_keyboardNudge() {
-      map.selectedLocation = {name:"Brussels", latitude:50.8503, longitude:4.3517}
+      var city = MapModel.cities[1] // Aarhus
+      map.selectedLocation = {name: city.name, latitude: city.latitude, longitude: city.longitude}
       map.forceActiveFocus()
       keyClick(Qt.Key_Right)
       compare(picks.count, 1)
-      fuzzyCompare(map.selectedLocation.longitude, 4.4017, 0.00001)
-      fuzzyCompare(map.selectedLocation.latitude, 50.8503, 0.00001)
-      compare(map.selectedLocation.name, "Brussels Area")
+      fuzzyCompare(map.selectedLocation.longitude, city.longitude + 0.05, 0.00001)
+      fuzzyCompare(map.selectedLocation.latitude, city.latitude, 0.00001)
+      compare(map.selectedLocation.name, city.name + " Area")
     }
   }
 }

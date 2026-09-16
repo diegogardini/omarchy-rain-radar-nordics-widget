@@ -1,23 +1,24 @@
-// A local equirectangular map, with longitude scaled at 52 degrees north.
+// A local equirectangular map, with longitude scaled at 56 degrees north.
 // Both drawing and picking use this transform, including its letterboxing.
-var bounds = { west: 2.0, east: 7.8, south: 49.3, north: 54.0 }
-var longitudeScale = Math.cos(52 * Math.PI / 180)
+var bounds = { west: 7.9, east: 15.3, south: 54.4, north: 58.0 }
+var longitudeScale = Math.cos(56 * Math.PI / 180)
 var cities = [
-  { name: "Bruges", latitude: 51.2093, longitude: 3.2247, dx: -9, dy: -10, align: "right" },
-  { name: "Ghent", latitude: 51.0543, longitude: 3.7174, dx: -9, dy: 14, align: "right" },
-  { name: "Brussels", latitude: 50.8503, longitude: 4.3517, dx: 9, dy: 0 },
-  { name: "Antwerp", latitude: 51.2194, longitude: 4.4025, dx: 9, dy: -9 },
-  { name: "Liège", latitude: 50.6326, longitude: 5.5797, dx: 9, dy: 0 },
-  { name: "Namur", latitude: 50.4674, longitude: 4.8718, dx: -9, dy: 13, align: "right" },
-  { name: "Rotterdam", latitude: 51.9244, longitude: 4.4777, dx: -9, dy: 12, align: "right" },
-  { name: "Amsterdam", latitude: 52.3676, longitude: 4.9041, dx: -9, dy: -12, align: "right" },
-  { name: "Utrecht", latitude: 52.0907, longitude: 5.1214, dx: 9, dy: -7 },
-  { name: "Eindhoven", latitude: 51.4416, longitude: 5.4697, dx: 9, dy: -3 },
-  { name: "Maastricht", latitude: 50.8514, longitude: 5.6910, dx: 9, dy: -12 },
-  { name: "Arnhem", latitude: 51.9851, longitude: 5.8987, dx: 9, dy: 12 },
-  { name: "Enschede", latitude: 52.2215, longitude: 6.8937, dx: 9, dy: -5 },
-  { name: "Leeuwarden", latitude: 53.2012, longitude: 5.7999, dx: -9, dy: -12, align: "right" },
-  { name: "Groningen", latitude: 53.2194, longitude: 6.5665, dx: 9, dy: 7 }
+  { name: "Copenhagen", latitude: 55.6761, longitude: 12.5683, dx: 9, dy: 0 },
+  { name: "Aarhus", latitude: 56.1629, longitude: 10.2039, dx: 9, dy: 0 },
+  { name: "Odense", latitude: 55.4038, longitude: 10.4024, dx: -9, dy: 12, align: "right" },
+  { name: "Aalborg", latitude: 57.0488, longitude: 9.9217, dx: 9, dy: -9 },
+  { name: "Esbjerg", latitude: 55.4765, longitude: 8.4594, dx: -9, dy: 0, align: "right" },
+  { name: "Randers", latitude: 56.4607, longitude: 10.0369, dx: 9, dy: -7 },
+  { name: "Kolding", latitude: 55.4904, longitude: 9.4721, dx: -9, dy: 12, align: "right" },
+  { name: "Horsens", latitude: 55.8607, longitude: 9.8503, dx: 9, dy: 9 },
+  { name: "Vejle", latitude: 55.7091, longitude: 9.5357, dx: -9, dy: -10, align: "right" },
+  { name: "Roskilde", latitude: 55.6415, longitude: 12.0803, dx: -9, dy: -10, align: "right" },
+  { name: "Herning", latitude: 56.1362, longitude: 8.9736, dx: -9, dy: 0, align: "right" },
+  { name: "Silkeborg", latitude: 56.1697, longitude: 9.5453, dx: 9, dy: 12 },
+  { name: "Næstved", latitude: 55.2299, longitude: 11.7607, dx: 9, dy: 9 },
+  { name: "Frederikshavn", latitude: 57.4407, longitude: 10.5335, dx: 9, dy: -5 },
+  { name: "Sønderborg", latitude: 54.9092, longitude: 9.7926, dx: 9, dy: 9 },
+  { name: "Rønne", latitude: 55.1004, longitude: 14.7065, dx: 9, dy: 0 }
 ]
 
 function viewport(width, height) {

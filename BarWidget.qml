@@ -4,7 +4,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "io.github.dzanaga.omarchy-rain-radar-belgium-netherlands-widget"
+  moduleName: "io.github.diegogardini.omarchy-rain-radar-denmark-widget"
 
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
 

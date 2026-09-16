@@ -1,12 +1,12 @@
 #!/bin/bash
 case "${@: -1}" in
-  *getrr.php*)
+  *forecastedr*)
     sleep 0.3
-    if [[ ${@: -1} == *lat=52* ]]; then
-      printf '150|12:00\n155|12:05\n'
+    if [[ ${@: -1} == *10.2039* ]]; then
+      printf '{"type":"FeatureCollection","features":[{"properties":{"rain-precipitation-rate":0.0006,"step":"2026-01-15T13:00:00Z"}},{"properties":{"rain-precipitation-rate":0.0009,"step":"2026-01-15T14:00:00Z"}}]}\n'
     else
-      printf '000|12:00\n000|12:05\n'
+      printf '{"type":"FeatureCollection","features":[{"properties":{"rain-precipitation-rate":0,"step":"2026-01-15T13:00:00Z"}},{"properties":{"rain-precipitation-rate":0,"step":"2026-01-15T14:00:00Z"}}]}\n'
     fi
     ;;
-  *) printf '{"city":"Brussels","latitude":50.8503,"longitude":4.3517}\n' ;;
+  *) printf '{"city":"Odense","latitude":55.4038,"longitude":10.4024}\n' ;;
 esac
