@@ -367,7 +367,7 @@ Panel {
 
             LocationMap {
               width: parent.width
-              height: Style.space(330)
+              height: Style.space(360)
               foreground: root.barForeground
               background: Color.background
               accent: root.selectionColor
