@@ -32,11 +32,20 @@ Item {
         id: zoomButton
         required property string modelData
         readonly property bool active: modelData === "Nordics" ? root.zoomedCountry === "" : root.zoomedCountry === modelData
+        function activate() { root.zoomedCountry = (zoomButton.modelData === "Nordics" ? "" : zoomButton.modelData) }
         width: zoomLabel.implicitWidth + 12
         height: zoomBar.height
         radius: 4
+        activeFocusOnTab: true
         color: active ? root.accent : root.translucent(root.foreground, 0.08)
-        border.color: root.translucent(root.foreground, 0.25)
+        border.color: zoomButton.activeFocus ? root.foreground : root.translucent(root.foreground, 0.25)
+        border.width: zoomButton.activeFocus ? 2 : 1
+        Keys.onPressed: function(event) {
+          if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+            zoomButton.activate()
+            event.accepted = true
+          }
+        }
         Text {
           id: zoomLabel
           anchors.centerIn: parent
@@ -48,7 +57,7 @@ Item {
         MouseArea {
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor
-          onClicked: root.zoomedCountry = (zoomButton.modelData === "Nordics" ? "" : zoomButton.modelData)
+          onClicked: { zoomButton.forceActiveFocus(); zoomButton.activate() }
         }
       }
     }

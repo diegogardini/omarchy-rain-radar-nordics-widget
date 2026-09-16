@@ -56,6 +56,18 @@ Item {
       fuzzyCompare(map.selectedLocation.longitude, before.longitude + 0.05, 0.00001)
       fuzzyCompare(map.selectedLocation.latitude, before.latitude, 0.00001)
     }
+    function test_zoomButtonKeyboardActivation() {
+      // Tab order visits the zoom buttons (declared first) before the map
+      // area: Nordics, Denmark, Norway, Sweden, Finland.
+      keyClick(Qt.Key_Tab)
+      keyClick(Qt.Key_Tab)
+      compare(map.zoomedCountry, "")
+      keyClick(Qt.Key_Return)
+      compare(map.zoomedCountry, "Denmark")
+      keyClick(Qt.Key_Tab)
+      keyClick(Qt.Key_Space)
+      compare(map.zoomedCountry, "Norway")
+    }
     function test_zoomedClickUsesCountryBounds() {
       map.zoomedCountry = "Denmark"
       compare(map.activeView.bounds.west, MapModel.countryViews.Denmark.bounds.west)
