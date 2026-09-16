@@ -10,6 +10,7 @@ Item {
   property color foreground: "#e2e8f0"
   property color background: "#18232e"
   property color accent: "#f6ad55"
+  property color noCoverageColor: "#e05252"
   property string fontFamily: "sans-serif"
   property real fontSize: 11
   readonly property color automaticColor: "#369bff"
@@ -24,16 +25,18 @@ Item {
 
   Row {
     id: zoomBar
+    width: parent.width
     height: 22
     spacing: 4
     Repeater {
+      id: zoomRepeater
       model: ["Nordics", "Denmark", "Norway", "Sweden", "Finland"]
       delegate: Rectangle {
         id: zoomButton
         required property string modelData
         readonly property bool active: modelData === "Nordics" ? root.zoomedCountry === "" : root.zoomedCountry === modelData
         function activate() { root.zoomedCountry = (zoomButton.modelData === "Nordics" ? "" : zoomButton.modelData) }
-        width: zoomLabel.implicitWidth + 12
+        width: (zoomBar.width - zoomBar.spacing * (zoomRepeater.count - 1)) / zoomRepeater.count
         height: zoomBar.height
         radius: 4
         activeFocusOnTab: true
@@ -82,7 +85,7 @@ Item {
       else if (event.key === Qt.Key_Up) latitude += 0.05
       else if (event.key === Qt.Key_Down) latitude -= 0.05
       else return
-      root.locationPicked(MapModel.areaLocation(
+      root.locationPicked(MapModel.pointLocation(
         Number(Math.max(view.south, Math.min(view.north, latitude)).toFixed(5)),
         Number(Math.max(view.west, Math.min(view.east, longitude)).toFixed(5))))
       event.accepted = true
@@ -125,6 +128,37 @@ Item {
             ctx.stroke()
           }
         }
+
+        // Tint everywhere outside MET Norway's radar coverage polygon: an
+        // "evenodd" fill of the full canvas rect minus the coverage ring
+        // leaves only the uncovered region filled, however it's shaped.
+        var coverageRing = MapData.radarCoverage.rings[0]
+        var coveragePoints = []
+        for (var m = 0; m < coverageRing.length; m++)
+          coveragePoints.push(MapModel.project(coverageRing[m][1], coverageRing[m][0], width, height, root.activeView))
+
+        ctx.beginPath()
+        ctx.rect(0, 0, width, height)
+        for (m = 0; m < coveragePoints.length; m++) {
+          if (m === 0) ctx.moveTo(coveragePoints[m].x, coveragePoints[m].y)
+          else ctx.lineTo(coveragePoints[m].x, coveragePoints[m].y)
+        }
+        ctx.closePath()
+        ctx.fillStyle = root.translucent(root.noCoverageColor, 0.16)
+        ctx.fill("evenodd")
+
+        // Stroke only the coverage boundary itself, not the outer rect above.
+        ctx.beginPath()
+        for (m = 0; m < coveragePoints.length; m++) {
+          if (m === 0) ctx.moveTo(coveragePoints[m].x, coveragePoints[m].y)
+          else ctx.lineTo(coveragePoints[m].x, coveragePoints[m].y)
+        }
+        ctx.closePath()
+        ctx.strokeStyle = root.translucent(root.noCoverageColor, 0.7)
+        ctx.lineWidth = 1
+        ctx.setLineDash([3, 3])
+        ctx.stroke()
+        ctx.setLineDash([])
       }
     }
 

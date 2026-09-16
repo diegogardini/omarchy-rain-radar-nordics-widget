@@ -382,6 +382,16 @@ Panel {
               width: parent.width
               wrapMode: Text.WordWrap
               textFormat: Text.PlainText
+              text: "▨ Red: outside MET Norway's published Nowcast coverage area. Even inside it, mountains and fjords can locally block radar."
+              color: "#e05252"
+              font.family: Style.font.family
+              font.pixelSize: Style.font.bodySmall
+            }
+
+            Text {
+              width: parent.width
+              wrapMode: Text.WordWrap
+              textFormat: Text.PlainText
               text: root.automaticLocation
                 ? "● Blue: " + (root.automaticLocation.name || "Automatic location") + (root.weatherLocation ? " (Weather settings)" : " (approximate IP location)") + (Model.inCoverage(root.automaticLocation.latitude, root.automaticLocation.longitude) ? "" : " · outside map")
                 : (root.locationError || "Finding automatic location…")
@@ -394,7 +404,7 @@ Panel {
               width: parent.width
               wrapMode: Text.WordWrap
               textFormat: Text.PlainText
-              text: root.draftLocation ? "◎ " + root.draftLocation.name + " · " + root.draftLocation.latitude.toFixed(4) + ", " + root.draftLocation.longitude.toFixed(4) : "Choose a forecast location"
+              text: root.draftLocation ? "◎ " + root.draftLocation.name : "Choose a forecast location"
               color: root.selectionColor
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall

@@ -29,21 +29,21 @@ test('clicks outside map bounds cannot create a location', () => {
   assert.equal(map.unproject(10, 10, 0, 0), null)
 })
 
-test('arbitrary points use the nearest mapped city without snapping coordinates', () => {
+test('arbitrary points are labeled with their own coordinates, never a nearby city name', () => {
   for (const city of map.cities) {
-    assert.deepEqual(map.areaLocation(city.latitude, city.longitude), {
-      name: city.name + ' Area', latitude: city.latitude, longitude: city.longitude
+    assert.deepEqual(map.pointLocation(city.latitude, city.longitude), {
+      name: city.latitude.toFixed(4) + '°N, ' + city.longitude.toFixed(4) + '°E',
+      latitude: city.latitude, longitude: city.longitude
     })
   }
-  assert.deepEqual(map.areaLocation(59.95, 10.80), {
-    name: 'Oslo Area', latitude: 59.95, longitude: 10.80
+  assert.deepEqual(map.pointLocation(59.95, 10.80), {
+    name: '59.9500°N, 10.8000°E', latitude: 59.95, longitude: 10.80
   })
-  assert.equal(map.areaLocation(60.20, 24.95).name, 'Helsinki Area')
 })
 
-test('legacy generic names gain an area label while explicit names stay intact', () => {
+test('legacy generic names resolve to a coordinate label while explicit names stay intact', () => {
   assert.deepEqual(map.namedLocation({name:'Selected position', latitude:59.95, longitude:10.80}), {
-    name:'Oslo Area', latitude:59.95, longitude:10.80
+    name: '59.9500°N, 10.8000°E', latitude:59.95, longitude:10.80
   })
   const city = {name:'Oslo', latitude:59.9139, longitude:10.7522}
   assert.equal(map.namedLocation(city), city)

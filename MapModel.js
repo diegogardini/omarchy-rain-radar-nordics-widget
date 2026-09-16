@@ -65,23 +65,17 @@ function project(latitude, longitude, width, height, view) {
     y: vp.y + (v.bounds.north - latitude) * vp.scale }
 }
 
-function areaLocation(latitude, longitude) {
-  var nearest = cities[0], minimum = Infinity
-  var radians = Math.PI / 180
-  for (var i = 0; i < cities.length; i++) {
-    var city = cities[i]
-    // Haversine distance ranks nearby cities without distorting longitude.
-    var dLat = (city.latitude - latitude) * radians
-    var dLon = (city.longitude - longitude) * radians
-    var distance = Math.pow(Math.sin(dLat / 2), 2)
-      + Math.cos(latitude * radians) * Math.cos(city.latitude * radians) * Math.pow(Math.sin(dLon / 2), 2)
-    if (distance < minimum) { minimum = distance; nearest = city }
-  }
-  return { name: nearest.name + " Area", latitude: latitude, longitude: longitude }
+// A point the user clicked (rather than a named city) is labeled with its
+// own coordinates, not a nearby city's name — the forecast is fetched for
+// this exact point either way, and a "<City> Area" label previously implied
+// the data was grouped or approximated by that city, which it never was.
+function pointLocation(latitude, longitude) {
+  var pad = function(n) { return n.toFixed(4) }
+  return { name: pad(latitude) + "°N, " + pad(longitude) + "°E", latitude: latitude, longitude: longitude }
 }
 
 function namedLocation(location) {
-  if (location && location.name === "Selected position") return areaLocation(location.latitude, location.longitude)
+  if (location && location.name === "Selected position") return pointLocation(location.latitude, location.longitude)
   return location
 }
 
@@ -92,7 +86,7 @@ function unproject(x, y, width, height, view) {
   var latitude = v.bounds.north - (y - vp.y) / vp.scale
   var longitude = v.bounds.west + (x - vp.x) / (v.longitudeScale * vp.scale)
   if (latitude < v.bounds.south || latitude > v.bounds.north || longitude < v.bounds.west || longitude > v.bounds.east) return null
-  return areaLocation(Number(latitude.toFixed(5)), Number(longitude.toFixed(5)))
+  return pointLocation(Number(latitude.toFixed(5)), Number(longitude.toFixed(5)))
 }
 
-if (typeof module !== "undefined") module.exports = { bounds: bounds, cities: cities, finlandLongitudeThreshold: finlandLongitudeThreshold, countryViews: countryViews, project: project, unproject: unproject, areaLocation: areaLocation, namedLocation: namedLocation }
+if (typeof module !== "undefined") module.exports = { bounds: bounds, cities: cities, finlandLongitudeThreshold: finlandLongitudeThreshold, countryViews: countryViews, project: project, unproject: unproject, pointLocation: pointLocation, namedLocation: namedLocation }
