@@ -110,6 +110,32 @@ Item {
       onPaint: {
         var ctx = getContext("2d")
         ctx.reset()
+
+        // Project the radar coverage boundary once, reused by the tint,
+        // its hole, and the dashed outline below.
+        var coverageRing = MapData.radarCoverage.rings[0]
+        var coveragePoints = []
+        for (var m = 0; m < coverageRing.length; m++)
+          coveragePoints.push(MapModel.project(coverageRing[m][1], coverageRing[m][0], width, height, root.activeView))
+
+        // Qt Quick's Canvas doesn't honor fill(fillRule), so an "evenodd
+        // hole" can't be punched via a compound path: fill the whole
+        // canvas with the tint, then erase the covered region with a
+        // destination-out composite instead. Drawn before the country
+        // shapes so their own (semi-transparent) fill still renders
+        // normally on top, inside or outside the tinted area.
+        ctx.fillStyle = root.translucent(root.noCoverageColor, 0.16)
+        ctx.fillRect(0, 0, width, height)
+        ctx.globalCompositeOperation = "destination-out"
+        ctx.beginPath()
+        for (m = 0; m < coveragePoints.length; m++) {
+          if (m === 0) ctx.moveTo(coveragePoints[m].x, coveragePoints[m].y)
+          else ctx.lineTo(coveragePoints[m].x, coveragePoints[m].y)
+        }
+        ctx.closePath()
+        ctx.fill()
+        ctx.globalCompositeOperation = "source-over"
+
         for (var i = 0; i < MapData.countries.length; i++) {
           var country = MapData.countries[i]
           ctx.fillStyle = root.translucent(root.foreground, country.covered ? 0.15 : 0.04)
@@ -129,25 +155,8 @@ Item {
           }
         }
 
-        // Tint everywhere outside MET Norway's radar coverage polygon: an
-        // "evenodd" fill of the full canvas rect minus the coverage ring
-        // leaves only the uncovered region filled, however it's shaped.
-        var coverageRing = MapData.radarCoverage.rings[0]
-        var coveragePoints = []
-        for (var m = 0; m < coverageRing.length; m++)
-          coveragePoints.push(MapModel.project(coverageRing[m][1], coverageRing[m][0], width, height, root.activeView))
-
-        ctx.beginPath()
-        ctx.rect(0, 0, width, height)
-        for (m = 0; m < coveragePoints.length; m++) {
-          if (m === 0) ctx.moveTo(coveragePoints[m].x, coveragePoints[m].y)
-          else ctx.lineTo(coveragePoints[m].x, coveragePoints[m].y)
-        }
-        ctx.closePath()
-        ctx.fillStyle = root.translucent(root.noCoverageColor, 0.16)
-        ctx.fill("evenodd")
-
-        // Stroke only the coverage boundary itself, not the outer rect above.
+        // Dashed outline of the coverage boundary itself, drawn last so
+        // it's visible over both the tint and the country shapes.
         ctx.beginPath()
         for (m = 0; m < coveragePoints.length; m++) {
           if (m === 0) ctx.moveTo(coveragePoints[m].x, coveragePoints[m].y)
