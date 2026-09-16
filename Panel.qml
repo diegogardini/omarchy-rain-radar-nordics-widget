@@ -8,7 +8,7 @@ import "MapModel.js" as MapModel
 
 Panel {
   id: root
-  moduleName: "io.github.diegogardini.omarchy-rain-radar-denmark-widget"
+  moduleName: "io.github.diegogardini.omarchy-rain-radar-nordics-widget"
   ipcTarget: moduleName
   manageIpc: false
 
@@ -91,7 +91,7 @@ Panel {
     if (Model.locationKey(activeLocation) !== Model.locationKey(location)) samples = []
     activeLocation = location
     if (!Model.inCoverage(location.latitude, location.longitude)) {
-      errorMessage = "This position is outside DMI's Denmark coverage."
+      errorMessage = "This position is outside the Nordic forecast coverage."
       samples = []
       loading = false
       return
@@ -103,14 +103,16 @@ Panel {
     if (!activeLocation || !Model.inCoverage(activeLocation.latitude, activeLocation.longitude) || rainProc.running) return
     errorMessage = ""
     loading = true
-    var start = new Date()
-    var end = new Date(start.getTime() + 12 * 60 * 60 * 1000)
-    var url = "https://opendataapi.dmi.dk/v1/forecastedr/collections/harmonie_dini_sf/position"
-      + "?coords=" + encodeURIComponent("POINT(" + activeLocation.longitude + " " + activeLocation.latitude + ")")
-      + "&crs=crs84&parameter-name=rain-precipitation-rate&f=GeoJSON"
-      + "&datetime=" + encodeURIComponent(start.toISOString() + "/" + end.toISOString())
-    rainProc.command = ["curl", "-fsSL", "--max-time", "10", url]
+    var url = "https://api.met.no/weatherapi/nowcast/2.0/complete"
+      + "?lat=" + encodeURIComponent(activeLocation.latitude.toFixed(4))
+      + "&lon=" + encodeURIComponent(activeLocation.longitude.toFixed(4))
+    // MET Norway requires a descriptive User-Agent identifying the app; see
+    // https://api.met.no/doc/TermsOfService.
+    rainProc.command = ["curl", "-fsSL", "--max-time", "8",
+      "-H", "User-Agent: omarchy-rain-radar-nordics-widget/1.0 github.com/diegogardini/omarchy-rain-radar-nordics-widget",
+      url]
     rainProc.requestLocationKey = Model.locationKey(activeLocation)
+    rainProc.requestLongitude = activeLocation.longitude
     rainProc.responseText = ""
     rainProc.running = true
   }
@@ -207,6 +209,7 @@ Panel {
   Process {
     id: rainProc
     property string requestLocationKey: ""
+    property real requestLongitude: 0
     property string responseText: ""
     stdout: StdioCollector {
       waitForEnd: true
@@ -219,10 +222,10 @@ Panel {
         return
       }
       if (exitCode !== 0) {
-        root.errorMessage = "Could not load the DMI forecast."
+        root.errorMessage = "Could not load the forecast."
       } else {
-        var parsed = Model.parseDmiForecast(responseText)
-        if (parsed.length === 0) root.errorMessage = "DMI returned no forecast values."
+        var parsed = Model.parseNowcastForecast(responseText, requestLongitude)
+        if (parsed.length === 0) root.errorMessage = "No forecast values returned."
         else { root.samples = parsed; root.errorMessage = "" }
       }
       root.loading = false
@@ -455,7 +458,7 @@ Panel {
           Text {
             width: parent.width
             visible: !root.pickingLocation && root.samples.length > 0
-            text: "Rainfall in mm/h · Nonlinear scale emphasizes light rain. Hourly forecast samples."
+            text: "Rainfall in mm/h · Nonlinear scale emphasizes light rain. 5-minute forecast samples."
             wrapMode: Text.WordWrap
             color: Util.alpha(root.barForeground, 0.55)
             font.family: Style.font.family
@@ -463,12 +466,12 @@ Panel {
           }
 
           Text {
-            text: "Data: DMI"
+            text: "Data: MET Norway (Yr)"
             color: Color.accent
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             font.underline: sourceHover.hovered
-            TapHandler { onTapped: Quickshell.execDetached(["xdg-open", "https://www.dmi.dk"]) }
+            TapHandler { onTapped: Quickshell.execDetached(["xdg-open", "https://www.yr.no"]) }
             HoverHandler { id: sourceHover; cursorShape: Qt.PointingHandCursor }
           }
         }

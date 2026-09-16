@@ -1,11 +1,11 @@
 #!/bin/bash
 case "${@: -1}" in
-  *forecastedr*)
+  *api.met.no*nowcast*)
     sleep 0.3
-    if [[ ${@: -1} == *10.2039* ]]; then
-      printf '{"type":"FeatureCollection","features":[{"properties":{"rain-precipitation-rate":0.0006,"step":"2026-01-15T13:00:00Z"}},{"properties":{"rain-precipitation-rate":0.0009,"step":"2026-01-15T14:00:00Z"}}]}\n'
+    if [[ ${@: -1} == *lon=10.2039* ]]; then
+      printf '{"properties":{"meta":{"radar_coverage":"ok"},"timeseries":[{"time":"2026-01-15T13:00:00Z","data":{"instant":{"details":{"precipitation_rate":0.6}}}},{"time":"2026-01-15T13:05:00Z","data":{"instant":{"details":{"precipitation_rate":0.9}}}}]}}\n'
     else
-      printf '{"type":"FeatureCollection","features":[{"properties":{"rain-precipitation-rate":0,"step":"2026-01-15T13:00:00Z"}},{"properties":{"rain-precipitation-rate":0,"step":"2026-01-15T14:00:00Z"}}]}\n'
+      printf '{"properties":{"meta":{"radar_coverage":"ok"},"timeseries":[{"time":"2026-01-15T13:00:00Z","data":{"instant":{"details":{"precipitation_rate":0}}}},{"time":"2026-01-15T13:05:00Z","data":{"instant":{"details":{"precipitation_rate":0}}}}]}}\n'
     fi
     ;;
   *) printf '{"city":"Odense","latitude":55.4038,"longitude":10.4024}\n' ;;

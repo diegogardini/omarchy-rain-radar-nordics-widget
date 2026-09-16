@@ -3,6 +3,10 @@ const assert = require('node:assert/strict')
 const map = require('../MapModel.js')
 const model = require('../Model.js')
 
+test('Finland longitude threshold stays in sync between MapModel.js and Model.js', () => {
+  assert.equal(model.finlandLongitudeThreshold, map.finlandLongitudeThreshold)
+})
+
 test('map bounds stay in sync between MapModel.js and Model.js', () => {
   assert.deepEqual(model.bounds, map.bounds)
 })
@@ -31,17 +35,17 @@ test('arbitrary points use the nearest mapped city without snapping coordinates'
       name: city.name + ' Area', latitude: city.latitude, longitude: city.longitude
     })
   }
-  assert.deepEqual(map.areaLocation(55.63, 12.60), {
-    name: 'Copenhagen Area', latitude: 55.63, longitude: 12.60
+  assert.deepEqual(map.areaLocation(59.95, 10.80), {
+    name: 'Oslo Area', latitude: 59.95, longitude: 10.80
   })
-  assert.equal(map.areaLocation(56.18, 10.22).name, 'Aarhus Area')
+  assert.equal(map.areaLocation(60.20, 24.95).name, 'Helsinki Area')
 })
 
 test('legacy generic names gain an area label while explicit names stay intact', () => {
-  assert.deepEqual(map.namedLocation({name:'Selected position', latitude:55.63, longitude:12.60}), {
-    name:'Copenhagen Area', latitude:55.63, longitude:12.60
+  assert.deepEqual(map.namedLocation({name:'Selected position', latitude:59.95, longitude:10.80}), {
+    name:'Oslo Area', latitude:59.95, longitude:10.80
   })
-  const city = {name:'Copenhagen', latitude:55.6761, longitude:12.5683}
+  const city = {name:'Oslo', latitude:59.9139, longitude:10.7522}
   assert.equal(map.namedLocation(city), city)
   assert.equal(map.namedLocation(null), null)
 })
@@ -54,7 +58,7 @@ test('saved selection rejects corrupt and out-of-coverage coordinates', () => {
   }
   const saved = {mode: 'selected', location: map.cities[0], settingsKey: '["","",""]'}
   const parsed = model.parseSelection(JSON.stringify(saved))
-  assert.equal(parsed.location.name, 'Copenhagen')
+  assert.equal(parsed.location.name, 'Oslo')
   assert.equal(parsed.settingsKey, saved.settingsKey)
 })
 
@@ -73,14 +77,6 @@ test('forecast request keys depend on coordinates rather than names', () => {
   assert.notEqual(model.locationKey(null), model.locationKey(map.cities[0]))
 })
 
-test('DMI rain rate (kg/m^2/s) converts to mm/h', () => {
-  assert.equal(model.dmiRateToMm(0), 0)
-  assert.equal(model.dmiRateToMm(-1), 0)
-  assert.equal(model.dmiRateToMm(null), 0)
-  assert.equal(model.dmiRateToMm('bad'), 0)
-  assert.ok(Math.abs(model.dmiRateToMm(0.0003) - 1.08) < 1e-9)
-})
-
 test('EU summer time boundaries land on the last Sunday of March/October at 01:00 UTC', () => {
   assert.equal(model.isEuSummerTime(new Date('2026-01-15T12:00:00Z')), false)
   assert.equal(model.isEuSummerTime(new Date('2026-07-15T12:00:00Z')), true)
@@ -92,44 +88,51 @@ test('EU summer time boundaries land on the last Sunday of March/October at 01:0
   assert.equal(model.isEuSummerTime(new Date('2026-10-25T01:00:00Z')), false)
 })
 
-test('Copenhagen time labels apply the correct UTC offset', () => {
-  assert.equal(model.copenhagenTimeLabel('2026-01-15T12:00:00Z'), '13:00')
-  assert.equal(model.copenhagenTimeLabel('2026-07-15T12:00:00Z'), '14:00')
-  assert.equal(model.copenhagenTimeLabel('not-a-date'), '')
+test('Nordic time labels use CET/CEST west of the Finland threshold and EET/EEST east of it', () => {
+  // Oslo longitude: CET in winter (+1), CEST in summer (+2).
+  assert.equal(model.nordicTimeLabel('2026-01-15T12:00:00Z', 10.75), '13:00')
+  assert.equal(model.nordicTimeLabel('2026-07-15T12:00:00Z', 10.75), '14:00')
+  // Helsinki longitude: EET in winter (+2), EEST in summer (+3).
+  assert.equal(model.nordicTimeLabel('2026-01-15T12:00:00Z', 24.94), '14:00')
+  assert.equal(model.nordicTimeLabel('2026-07-15T12:00:00Z', 24.94), '15:00')
+  assert.equal(model.nordicTimeLabel('not-a-date', 10.75), '')
 })
 
-test('DMI GeoJSON forecast responses parse into sorted mm/time samples', () => {
-  const geojson = JSON.stringify({
-    type: 'FeatureCollection',
-    features: [
-      { properties: { 'rain-precipitation-rate': 0.0006, step: '2026-01-15T14:00:00Z' } },
-      { properties: { 'rain-precipitation-rate': 0, step: '2026-01-15T12:00:00Z' } },
-      { properties: { 'rain-precipitation-rate': 0.0003, step: '2026-01-15T13:00:00Z' } }
-    ]
+test('MET Norway Nowcast responses parse into sorted mm/time samples', () => {
+  const payload = JSON.stringify({
+    properties: {
+      timeseries: [
+        { time: '2026-01-15T13:00:00Z', data: { instant: { details: { precipitation_rate: 0.3 } } } },
+        { time: '2026-01-15T12:00:00Z', data: { instant: { details: { precipitation_rate: 0.0 } } } },
+        { time: '2026-01-15T12:30:00Z', data: { instant: { details: { precipitation_rate: 0.1 } } } }
+      ]
+    }
   })
-  const samples = model.parseDmiForecast(geojson)
+  const samples = model.parseNowcastForecast(payload, 10.75)
   assert.equal(samples.length, 3)
   assert.equal(samples[0].time, '13:00')
-  assert.equal(samples[1].time, '14:00')
-  assert.equal(samples[2].time, '15:00')
-  assert.ok(Math.abs(samples[0].mm - 0) < 1e-9)
-  assert.ok(Math.abs(samples[1].mm - 1.08) < 1e-9)
-  assert.ok(Math.abs(samples[2].mm - 2.16) < 1e-9)
+  assert.equal(samples[1].time, '13:30')
+  assert.equal(samples[2].time, '14:00')
+  assert.equal(samples[0].mm, 0.0)
+  assert.equal(samples[1].mm, 0.1)
+  assert.equal(samples[2].mm, 0.3)
 })
 
-test('DMI forecast parsing tolerates malformed features and invalid input', () => {
-  assert.deepEqual(model.parseDmiForecast(''), [])
-  assert.deepEqual(model.parseDmiForecast('not json'), [])
-  assert.deepEqual(model.parseDmiForecast('{}'), [])
-  const geojson = JSON.stringify({
-    features: [
-      { properties: { 'rain-precipitation-rate': 0.0003, step: '2026-01-15T13:00:00Z' } },
-      { properties: {} },
-      null,
-      { properties: { 'rain-precipitation-rate': 0.0001, step: 'not-a-date' } }
-    ]
+test('Nowcast parsing tolerates malformed entries and invalid input', () => {
+  assert.deepEqual(model.parseNowcastForecast('', 10.75), [])
+  assert.deepEqual(model.parseNowcastForecast('not json', 10.75), [])
+  assert.deepEqual(model.parseNowcastForecast('{}', 10.75), [])
+  const payload = JSON.stringify({
+    properties: {
+      timeseries: [
+        { time: '2026-01-15T13:00:00Z', data: { instant: { details: { precipitation_rate: 0.3 } } } },
+        { time: '2026-01-15T13:30:00Z', data: { instant: { details: {} } } },
+        { data: { instant: { details: { precipitation_rate: 0.1 } } } },
+        null
+      ]
+    }
   })
-  const samples = model.parseDmiForecast(geojson)
+  const samples = model.parseNowcastForecast(payload, 10.75)
   assert.equal(samples.length, 1)
   assert.equal(samples[0].time, '14:00')
 })

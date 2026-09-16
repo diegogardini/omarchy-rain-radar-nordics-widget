@@ -1,4 +1,4 @@
-# Rain Forecast Denmark
+# Rain Forecast Nordics
 
 ![Rain forecast popup preview](preview.png)
 
@@ -6,11 +6,9 @@
 
 Winter is coming... and rain with it. Let's get our raincoats ready and keep an eye on this handy rain forecast widget.
 
-An Omarchy Shell bar widget for DMI (Danish Meteorological Institute)
-forecasts across Denmark. Click the widget to see the next 12 hours of rain
-in mm/h. This is an hourly weather-model forecast (DMI's HARMONIE model),
-not a radar nowcast, so it won't catch a shower that starts and ends within
-the hour.
+An Omarchy Shell bar widget for MET Norway (Yr) rain nowcasts across
+Norway, Sweden, Finland and Denmark. Click the widget to see the next 2
+hours of rain in mm/h, refreshed every 5 minutes from live radar data.
 
 ## Location
 
@@ -18,20 +16,21 @@ Choose **Change location** (or press **C**) to open the map. Click a
 city or any point on the map, then choose **Use selected location**.  
 **Use automatic location** restores automatic lookup (IP based).
 
-The forecast is provided by [DMI](https://www.dmi.dk/) and is limited to
-Denmark. Coordinates are sent to `opendataapi.dmi.dk` when a forecast is
-requested.
+The forecast is provided by [MET Norway](https://www.met.no/) (published
+via [Yr](https://www.yr.no/)) and is limited to the Nordic area (Norway,
+Sweden, Finland and Denmark). Coordinates are sent to `api.met.no` when a
+forecast is requested.
 
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/diegogardini/omarchy-rain-radar-denmark-widget.git --enable
+omarchy plugin add https://github.com/diegogardini/omarchy-rain-radar-nordics-widget.git --enable
 ```
 
 ## Remove
 
 ```bash
-omarchy plugin remove io.github.diegogardini.omarchy-rain-radar-denmark-widget
+omarchy plugin remove io.github.diegogardini.omarchy-rain-radar-nordics-widget
 ```
 
 To also remove the saved map choice, delete
@@ -40,11 +39,11 @@ To also remove the saved map choice, delete
 ## License and data
 
 The plugin code is licensed under [MIT](LICENSE). It requires the Omarchy
-Shell environment and `curl`, which is used to request forecasts from DMI
-and approximate IP location from the configured providers. Rain forecast
-data is provided by the Danish Meteorological Institute (DMI) under
-[CC BY 4.0](https://www.dmi.dk/friedata/dokumentation/terms-of-use). The
-bundled map outlines are Natural Earth public-domain data; see
+Shell environment and `curl`, which is used to request forecasts from MET
+Norway and approximate IP location from the configured providers. Rain
+forecast data is provided by MET Norway under
+[CC BY 4.0](https://api.met.no/doc/TermsOfService). The bundled map
+outlines are Natural Earth public-domain data; see
 [MAP-SOURCES.md](MAP-SOURCES.md).
 
 The plugin reads Omarchy Weather's location file and only writes its own

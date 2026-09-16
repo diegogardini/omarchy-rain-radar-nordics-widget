@@ -16,7 +16,7 @@ Item {
     when: windowShown
     function init() { picks.clear(); map.selectedLocation = null }
     function test_mapClick() {
-      var point = MapModel.project(56.8, 12.0, map.width, map.height)
+      var point = MapModel.project(66.0, 15.0, map.width, map.height)
       var x = Math.round(point.x), y = Math.round(point.y)
       var expected = MapModel.unproject(x, y, map.width, map.height)
       mouseClick(map, x, y)
@@ -26,7 +26,7 @@ Item {
       fuzzyCompare(map.selectedLocation.longitude, expected.longitude, 0.00001)
     }
     function test_cityLabel() {
-      var city = MapModel.cities[8] // Vejle
+      var city = MapModel.cities[6] // Gothenburg
       var point = MapModel.project(city.latitude, city.longitude, map.width, map.height)
       mouseClick(map, point.x - 25, point.y - 12)
       compare(picks.count, 1)
@@ -38,7 +38,7 @@ Item {
       compare(picks.count, 0)
     }
     function test_keyboardNudge() {
-      var city = MapModel.cities[1] // Aarhus
+      var city = MapModel.cities[0] // Oslo
       map.selectedLocation = {name: city.name, latitude: city.latitude, longitude: city.longitude}
       map.forceActiveFocus()
       keyClick(Qt.Key_Right)

@@ -17,7 +17,7 @@ Rectangle {
 
   activeFocusOnTab: true
   Keys.onPressed: function(event) {
-    var location = selectedLocation || automaticLocation || { latitude: 56.0, longitude: 10.5 }
+    var location = selectedLocation || automaticLocation || { latitude: 60.0, longitude: 15.0 }
     var latitude = location.latitude
     var longitude = location.longitude
     if (event.key === Qt.Key_Left) longitude -= 0.05

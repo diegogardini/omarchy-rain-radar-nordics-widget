@@ -36,15 +36,8 @@ function parseIpLocation(raw) {
   }
 }
 
-// DMI's rain-precipitation-rate parameter is in kg per square metre per second.
-// 1 kg/m^2 of water is 1 mm of depth, so multiplying by 3600 gives mm/h.
-function dmiRateToMm(value) {
-  var rate = finiteNumber(value)
-  if (rate === null || rate < 0) return 0
-  return rate * 3600
-}
-
 // Sundays are the EU's DST boundary; both switches happen at 01:00 UTC.
+// Applies to all four Nordic countries (CET/CEST and EET/EEST alike).
 function lastSundayUtc(year, month) {
   var d = new Date(Date.UTC(year, month + 1, 1))
   d.setUTCDate(d.getUTCDate() - 1)
@@ -61,31 +54,41 @@ function isEuSummerTime(utcDate) {
   return utcDate >= start && utcDate < end
 }
 
-function copenhagenTimeLabel(isoStep) {
+// Norway, Sweden and Denmark use CET/CEST (UTC+1/+2); Finland uses EET/EEST
+// (UTC+2/+3), one hour ahead. There's no clean coordinate split at the real
+// border, so longitude is used as a simplification. Kept in sync with
+// MapModel.js's identical constant by a test (same no-cross-import pattern
+// as bounds above).
+var finlandLongitudeThreshold = 21.5
+
+function nordicTimeLabel(isoStep, longitude) {
   var d = new Date(isoStep)
   if (isNaN(d.getTime())) return ""
-  var offsetHours = isEuSummerTime(d) ? 2 : 1
+  var baseOffset = finiteNumber(longitude) !== null && longitude >= finlandLongitudeThreshold ? 2 : 1
+  var offsetHours = baseOffset + (isEuSummerTime(d) ? 1 : 0)
   var local = new Date(d.getTime() + offsetHours * 3600000)
   var pad = function(n) { return (n < 10 ? "0" : "") + n }
   return pad(local.getUTCHours()) + ":" + pad(local.getUTCMinutes())
 }
 
-// DMI's forecastedr API returns a GeoJSON FeatureCollection; each feature's
-// properties carry the parameter value plus a "step" forecast timestamp.
-// Parsed defensively since the shape is documented, not observed live.
-function parseDmiForecast(raw) {
+// MET Norway's Nowcast API already reports precipitation_rate in mm/h, so no
+// unit conversion is needed (unlike DMI's kg/m^2/s HARMONIE output, which
+// this widget used to rely on before switching to MET Norway's 5-minute
+// radar nowcast). Each timeseries entry nests the value under
+// data.instant.details.precipitation_rate. Parsed defensively since a
+// malformed or partial entry shouldn't break the whole forecast.
+function parseNowcastForecast(raw, longitude) {
   try {
     var data = JSON.parse(String(raw || "{}"))
-    var features = Array.isArray(data.features) ? data.features : []
+    var series = Array.isArray(data.properties && data.properties.timeseries) ? data.properties.timeseries : []
     var samples = []
-    for (var i = 0; i < features.length; i++) {
-      var feature = features[i] || {}
-      var props = feature.properties || {}
-      var step = props.step || feature.step
-      var mm = dmiRateToMm(props["rain-precipitation-rate"])
-      var time = copenhagenTimeLabel(step)
-      if (!time) continue
-      samples.push({ mm: mm, time: time, step: String(step) })
+    for (var i = 0; i < series.length; i++) {
+      var entry = series[i] || {}
+      var details = entry.data && entry.data.instant && entry.data.instant.details
+      var mm = finiteNumber(details && details.precipitation_rate)
+      var time = nordicTimeLabel(entry.time, longitude)
+      if (mm === null || !time) continue
+      samples.push({ mm: mm, time: time, step: String(entry.time) })
     }
     samples.sort(function(a, b) { return a.step < b.step ? -1 : (a.step > b.step ? 1 : 0) })
     return samples
@@ -114,7 +117,11 @@ function formatMm(mm) {
 
 // Kept in sync with MapModel.js's bounds by a test, since there is no
 // cross-.js-file import between them (same pattern the original code used).
-var bounds = { west: 7.9, east: 15.3, south: 54.4, north: 58.0 }
+// This rectangle is a rough approximation of the four Nordic countries'
+// combined extent, not their actual (non-rectangular) shape or the real
+// Nowcast coverage polygon — the live API's own 422 response is the
+// authoritative check for a specific point.
+var bounds = { west: 4.5, east: 31.8, south: 54.4, north: 71.3 }
 
 function inCoverage(latitude, longitude) {
   var lat = finiteNumber(latitude)
@@ -145,10 +152,10 @@ if (typeof module !== "undefined") module.exports = {
   finiteNumber: finiteNumber,
   parseWeatherLocation: parseWeatherLocation,
   parseIpLocation: parseIpLocation,
-  dmiRateToMm: dmiRateToMm,
   isEuSummerTime: isEuSummerTime,
-  copenhagenTimeLabel: copenhagenTimeLabel,
-  parseDmiForecast: parseDmiForecast,
+  finlandLongitudeThreshold: finlandLongitudeThreshold,
+  nordicTimeLabel: nordicTimeLabel,
+  parseNowcastForecast: parseNowcastForecast,
   intensity: intensity,
   formatMm: formatMm,
   bounds: bounds,
